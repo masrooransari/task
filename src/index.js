@@ -11,7 +11,9 @@ function Square(props) {
     </button>
   );
 }
-
+// function refreshPage(){ 
+//   window.location.reload(); 
+// }
 class Board extends React.Component {
   renderSquare(i) {
     return (
@@ -55,7 +57,9 @@ class Game extends React.Component {
       xIsNext: true
     };
   }
-
+  refreshPage(){ 
+    window.location.reload(); 
+  }
   handleClick(i) {
     const history = this.state.history;
     const current = history[history.length - 1];
@@ -70,16 +74,19 @@ class Game extends React.Component {
       }]),
       xIsNext: !this.state.xIsNext,
     });
+    const winner = calculateWinner(current.squares);
+    if (winner) {
+    }
   }
   
   render() {
     const history = this.state.history;
     const current = history[history.length - 1];
     const winner = calculateWinner(current.squares);
-
     let status;
     if (winner) {
       status = 'Winner: ' + winner;
+      this.refreshPage();
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
@@ -95,6 +102,8 @@ class Game extends React.Component {
         <div className="game-info">
           <div>{status}</div>
           <ol>{/* TODO */}</ol>
+          {/* <button type="button" onClick={ refreshPage }> <span>Reload</span> </button> */}
+
         </div>
       </div>
     );
