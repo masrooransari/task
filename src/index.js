@@ -1,146 +1,124 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
-//import MyComponet from './MyComponet';
-function Square(props) {
+// import App from './App';
+// import * as serviceWorker from './serviceWorker';
+const PictureInfo = ({ pictures }) => {  
   return (
-    <button className="square" onClick={props.onClick}>
-      {props.value}
-    </button>
-  );
+    pictures && pictures.length ? pictures.map((item, index) => {
+      return (
+        <div key={item + index}>
+          {item.FolderName}
+          <button onClick={() => this.handleClick(item.FolderName)}> {item.FolderName}</button>
+        </div>
+      )
+    }) : null
+  )
 }
-// function refreshPage(){ 
-//   window.location.reload(); 
-// }
-class Board extends React.Component {
-  renderSquare(i) {
-    return (
-      <Square
-        value={this.props.squares[i]}
-        onClick={() => this.props.onClick(i)}
-      />
-    );
-  }
-
-  render() {
-    return (
-      <div>
-        <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
-        </div>
-      </div>
-    );
-  }
-}
-
-class Game extends React.Component {
+class Apps extends React.Component {
   constructor(props) {
+    // makes this refer to this component
     super(props);
+    // set local state
     this.state = {
-      history: [{
-        squares: Array(9).fill(null)
-      }],
-      xIsNext: true
+      date: new Date(),
+      seconds: 0,
+      pictures: [],
+      taskinfo: []
     };
+    //    this.handleClick = this.handleClick.bind(this);
   }
-  refreshPage(){ 
-    window.location.reload(); 
-  }
-  handleClick(i) {
-    const history = this.state.history;
-    const current = history[history.length - 1];
-    const squares = current.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-    this.setState({
-      history: history.concat([{
-        squares: squares
-      }]),
-      xIsNext: !this.state.xIsNext,
+  handleClick = async (name) => {
+    let selectedWord = name;
+    let that = this;
+    fetchAPI(selectedWord).then(function (result) {
+      that.setState({ taskinfo: result });
     });
-    const winner = calculateWinner(current.squares);
-    if (winner) {
-    }
+  };
+  tick() {
+    this.setState(prevState => ({
+      seconds: prevState.seconds + 1,
+      date: new Date()
+    }));
   }
-  
-  render() {
-    const history = this.state.history;
-    const current = history[history.length - 1];
-    const winner = calculateWinner(current.squares);
-    let status;
-    if (winner) {
-      status = 'Winner: ' + winner;
-      this.refreshPage();
-    } else {
-      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
-    }
+  componentDidMount() {
+    fetch('http://13.74.177.187:8585/api/Task/GetSubFolders')
+      .then(results => {
+        console.log(results)
+        return results.json();
+      }).then(data => {
+        console.log("State", data);
+        this.setState({ pictures: data });
 
+      })
+
+    this.interval = setInterval(() => this.tick(), 1000);
+  }
+  getPictureInfo = (pictures) => {
     return (
-      <div className="game">
-        <div className="game-board">
-          <Board
-            squares={current.squares}
-            onClick={(i) => this.handleClick(i)}
-          />
-        </div>
-        <div className="game-info">
-          <div>{status}</div>
-          <ol>{/* TODO */}</ol>
-          {/* <button type="button" onClick={ refreshPage }> <span>Reload</span> </button> */}
-
-        </div>
-      </div>
-    );
+      pictures && pictures.length ? pictures.map((item, index) => {
+        return (
+          <div key={item + index}>
+            {item.FolderName}
+            <button onClick={() => this.handleClick(item.FolderName)}> {item.FolderName}</button>
+          </div>
+        )
+      }) : null
+    )
+  }
+  getTaskInfo = (taskinfo) => {
+    return (
+      taskinfo && taskinfo.length ? taskinfo.map((item, index) => {
+        return (
+          <div key={item + index}>
+            {item.name}     ,  {item.lastRunTime}, {item.nextRunTime}      {item.state}
+            <button onClick={() => this.handleClick(item.name)}> {item.name}  </button>
+          </div>
+        )
+      }) : null
+    )
+  }
+  render() {
+    const { pictures, taskinfo } = this.state
+    return <h1>
+      It is {this.state.date.toDateString()} {this.state.date.toLocaleTimeString()}
+       {this.getPictureInfo(pictures)} 
+      {/* <PictureInfo pictures = {pictures} {...this} /> */}
+      {this.getTaskInfo(taskinfo)}
+     
+    </h1>
   }
 }
-
-// ========================================
-
-ReactDOM.render(
-  <Game />,
-  document.getElementById('root')
-);
-
-function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+function fetchAPI(param) {
+  return fetch("http://13.74.177.187:8585/api/Task/GetTaskInfo?FolderName=" + param)
+    .then(response => {
+      if (!response.ok) {
+        this.handleResponseError(response);
+      }
+      return response.json();
+    })
+    .then(item => {
+      // item["link"] = item._links.self.href;
+      console.log(item);
+      return item;
     }
-  }
-  return null;
+    )
+    .catch(error => {
+      this.handleError(error);
+    });
 }
+// function fetchAPI(param) {
+//   // param is a highlighted word from the user before it clicked the button
+//   return fetch("http://13.74.177.187:8585/api/Task/GetSubFolders?FolderName=" + param).then(results => {
+//     if(results.ok){
+//       console.log(results.json()); //first consume it in console.log
+//      return results.json(); //then consume it again, the error happens
 
+//  }
+//     return results.json();
+//   }).then(data => {
 
-// ReactDOM.render(<MyComponet />, document.getElementById('root'));
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+//   })
+// }
+ReactDOM.render(<div><Apps /></div>, document.getElementById('root'));
+// serviceWorker.unregister();
